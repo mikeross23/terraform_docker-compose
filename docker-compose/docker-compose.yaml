@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+
+  mysql_db:
+    container_name: mysql_container
+    image: mysql/mysql-server:8.0.23
+    restart: always
+    environment: 
+      MYSQL_ROOT_PASSWORD: qwerty123
+      MYSQL_DATABASE: wordpress_db
+      MYSQL_USER: wordpress_user
+      MYSQL_PASSWORD: wordpress_user_password
+    volumes:
+      - mysql:/var/lib/mysql
+
+  wordpress:
+    depends_on:
+      - mysql_db
+    image: wordpress:latest
+    restart: always
+    ports:
+      - "8000:80"
+    environment:
+      WORDPRESS_DB_HOST: mysql_db:3306
+      WORDPRESS_DB_USER: wordpress_user
+      WORDPRESS_DB_PASSWORD: wordpress_user_password
+      WORDPRESS_DB_NAME: wordpress_db
+    volumes:
+      - "./:/var/www/html"
+
+  phpmyadmin:
+    depends_on:
+      - mysql_db
+    platform: linux/amd64
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports: 
+      - 3333:80
+    environment:
+      PMA_HOST: mysql_db
+      MYSQL_ROOT_PASSWORD: qwerty123
+    volumes:
+    - "./:/var/www/html/phpmyadmin"
+
+volumes:
+  mysql: {}
