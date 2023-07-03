@@ -7,18 +7,11 @@ variable "access_key" {
 variable "secret_key" {
   type = string
 }
-variable "instance_name" {
-  type    = string
-  default = "ec2_instance"
-}
 variable "ami_id" {
   type = string
 }
 variable "number_of_instances" {
   type = number
-}
-variable "subnet_id" {
-  type = string
 }
 variable "instance_type" {
   type = string
@@ -50,16 +43,8 @@ variable "destination_cidr_block" {
   type    = string
   default = "0.0.0.0/0"
 }
-variable "aws_security_group_name" {
-  type    = string
-  default = "allow_tls"
-}
 variable "allowed_ingress_ports_description" {
   type = string
-}
-variable "allowed_ingress_ports" {
-  type        = string
-  description = "Example: 22,80,8080,8000,3333 etc."
 }
 variable "cidr_blocks_for_ingress" {
   type    = string
@@ -69,7 +54,15 @@ variable "cidr_blocks_for_egress" {
   type    = string
   default = "0.0.0.0/0"
 }
-variable "ipv6_cidr_blocks" {
-  type    = string
-  default = "::/0"
+variable "instance_tenancy" {
+  type = string
+}
+variable "user_data_path" {
+  type = string
+}
+variable "ports_in" {
+  type = list(number)
+}
+variable "ports_out" {
+  type = list(number)
 }

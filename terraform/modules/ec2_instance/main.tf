@@ -3,12 +3,14 @@ provider "aws" {
   access_key = var.access_key
   secret_key = var.secret_key
 }
-resource "aws_instance" "var.instance_name" {
-  ami           = var.ami_id
-  count         = var.number_of_instances
-  subnet_id     = var.subnet_id
-  instance_type = var.instance_type
-  key_name      = var.ami_key_pair_name
+resource "aws_instance" "wordpress" {
+  ami                    = var.ami_id
+  count                  = var.number_of_instances
+  subnet_id              = aws_subnet.public_subnet.id
+  instance_type          = var.instance_type
+  key_name               = var.ami_key_pair_name
+  user_data              = file(var.user_data_path)
+  vpc_security_group_ids = [aws_security_group.allowed_ports.id]
 }
 # VPC
 resource "aws_vpc" "vpc" {
@@ -25,27 +27,25 @@ resource "aws_internet_gateway" "ig" {
 # Elastic-IP (eip) for NAT
 resource "aws_eip" "nat_eip" {
   vpc        = true
-  depends_on = [aws_internet_gateway.id]
+  depends_on = [aws_internet_gateway.ig]
 }
 # NAT
 resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat_eip.id
-  subnet_id     = element(aws_subnet.public_subnet.*.id, 0)
+  subnet_id     = aws_subnet.public_subnet.id
 }
 # Public subnet
 resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.vpc.id
-  count                   = length(var.public_subnets_cidr)
-  cidr_block              = element(var.public_subnets_cidr, count.index)
-  availability_zone       = element(var.availability_zones, count.index)
+  cidr_block              = var.public_subnets_cidr
+  availability_zone       = var.availability_zones
   map_public_ip_on_launch = true
 }
 # Private Subnet
 resource "aws_subnet" "private_subnet" {
   vpc_id                  = aws_vpc.vpc.id
-  count                   = length(var.private_subnets_cidr)
-  cidr_block              = element(var.private_subnets_cidr, count.index)
-  availability_zone       = element(var.availability_zones, count.index)
+  cidr_block              = var.private_subnets_cidr
+  availability_zone       = var.availability_zones
   map_public_ip_on_launch = false
 }
 # Routing tables to route traffic for Private Subnet
@@ -71,36 +71,35 @@ resource "aws_route" "private_nat_gateway" {
 }
 # Route table associations for both Public & Private Subnets
 resource "aws_route_table_association" "public" {
-  count          = length(var.public_subnets_cidr)
-  subnet_id      = element(aws_subnet.public_subnet.*.id, count.index)
+  subnet_id      = aws_subnet.public_subnet.id
   route_table_id = aws_route_table.public.id
 }
 
 resource "aws_route_table_association" "private" {
-  count          = length(var.private_subnets_cidr)
-  subnet_id      = element(aws_subnet.private_subnet.*.id, count.index)
+  subnet_id      = aws_subnet.private_subnet.id
   route_table_id = aws_route_table.private.id
 }
-# Security Group of VPC
-resource "aws_security_group" "aws_security_group_name" {
-  name        = var.aws_security_group_name
-  description = var.allowed_ingress_ports_description
+# Security groops
+resource "aws_security_group" "allowed_ports" {
+  vpc_id = aws_vpc.vpc.id
   dynamic "ingress" {
-    for_each = [var.allowed_ingress_ports]
-    iterator = port
+    for_each = toset(var.ports_in)
     content {
-      description = var.allowed_ingress_ports_description
-      from_port   = port.value
-      to_port     = port.value
+      from_port   = ingress.value
+      to_port     = ingress.value
       protocol    = "tcp"
       cidr_blocks = [var.cidr_blocks_for_ingress]
     }
   }
-  egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = [var.var.cidr_blocks_for_egress]
-    ipv6_cidr_blocks = [var.ipv6_cidr_blocks]
+  dynamic "egress" {
+    for_each = toset(var.ports_out)
+    content {
+      from_port   = egress.value
+      to_port     = egress.value
+      protocol    = "-1"
+      cidr_blocks = [var.cidr_blocks_for_egress]
+    }
   }
+
 }
+
