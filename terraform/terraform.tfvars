@@ -1,6 +1,6 @@
 ec2_region                            = "us-east-1"
-ec2_access_key                        = "AKIAX34UH6BC2M6FPOE3"
-ec2_secret_key                        = "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"
+ec2_access_key                        = ""
+ec2_secret_key                        = ""
 ec2_ami_id                            = "ami-053b0d53c279acc90"
 ec2_number_of_instances               = 1
 ec2_instance_type                     = "t2.micro"
