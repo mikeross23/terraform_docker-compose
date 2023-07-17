@@ -4,3 +4,4 @@ terraform*
 *.pem
 test
 .terraform/*
+*DS_Store*

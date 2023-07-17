@@ -99,3 +99,8 @@ resource "aws_eip" "elastic_ip" {
 output "server_public_ip" {
   value = aws_eip.elastic_ip
 }
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.vpc.id
+  service_name      = "com.amazonaws.${var.region}.s3"
+  vpc_endpoint_type = "Gateway"
+}
